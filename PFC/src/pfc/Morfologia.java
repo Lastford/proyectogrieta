@@ -10,6 +10,7 @@ import java.awt.image.*;
 import javax.swing.ImageIcon;
 import java.awt.*;
 import jigl.image.*;
+import jigl.image.ops.morph.GClose;
 
 
 /**
@@ -53,40 +54,71 @@ public class Morfologia {
     }
 
 
-    protected static ColorImage ColorInitFromImage(java.awt.Image img, int x, int y, int w, int h) {
-        ColorImage result = new ColorImage(w, h);
-        int pixels[] = new int[w * h];
-        PixelGrabber pg = new PixelGrabber(img, x, y, w, h, pixels, 0, w);
-        try {
-            pg.grabPixels();
-        } catch (InterruptedException e) {
-            System.err.println("interrupted waiting for pixels!");
-            return result;
-        }
-        if ((pg.status() & ImageObserver.ABORT) != 0) {
-            System.err.println("image fetch aborted or errored");
-            return result;
-        }
+    public static BufferedImage clausura(BufferedImage img, selectallTool sat) throws ImageNotSupportedException {
+        float arr[][] = new float[1][9];
 
-        // convert from grabbed pixels
-        int red = 0;
-        int green = 0;
-        int blue = 0;
-        int index = 0;
-        for (int iy = 0; iy < result.Y(); iy++) {
-            for (int ix = 0; ix < result.X(); ix++) {
-                red = 0x0FF & pixels[index] >> 16;
-                green = 0x0FF & pixels[index] >> 8;
-                blue = 0x0FF & pixels[index];
-                (result.plane(0)).set(ix, iy, (short) red);
-                (result.plane(1)).set(ix, iy, (short) green);
-                (result.plane(2)).set(ix, iy, (short) blue);
-                index++;
+        for (int i = 0; i < 1; i++) {
+            for (int j = 0; j < 9; j++){
+                arr[i][j] = 0;
             }
         }
 
-        return result;
+        System.out.println("Punto inicio: ("+sat.getStartX()+","+sat.getStartY()+")");
+        System.out.println("Punto fin: ("+sat.getEndX()+","+sat.getEndY()+")");
+
+        ROI roi = new ROI(sat.getStartX(), sat.getStartY(), sat.getEndX(), sat.getEndY());
+
+        java.awt.Image image = (java.awt.Image) toImage(img);
+
+        GrayImage grayimg = GrayInitFromImage(image, 0, 0, img.getWidth()-1, img.getHeight()-1);
+
+        ImageKernel ik = new ImageKernel(arr);
+        GClose gcl = new GClose(ik, 0, 0);
+
+        jigl.image.Image im = gcl.apply(grayimg, roi);
+
+        System.out.println("Clausura realizada...");
+        MemoryImageSource imp = (MemoryImageSource) getJavaImage((GrayImage) (jigl.image.Image) im);
+        java.awt.Image imageres = Toolkit.getDefaultToolkit().createImage(imp);
+        BufferedImage res = toBufferedImage(imageres);
+        return res;
     }
+
+
+//    protected static ColorImage ColorInitFromImage(java.awt.Image img, int x, int y, int w, int h) {
+//        ColorImage result = new ColorImage(w, h);
+//        int pixels[] = new int[w * h];
+//        PixelGrabber pg = new PixelGrabber(img, x, y, w, h, pixels, 0, w);
+//        try {
+//            pg.grabPixels();
+//        } catch (InterruptedException e) {
+//            System.err.println("interrupted waiting for pixels!");
+//            return result;
+//        }
+//        if ((pg.status() & ImageObserver.ABORT) != 0) {
+//            System.err.println("image fetch aborted or errored");
+//            return result;
+//        }
+//
+//        // convert from grabbed pixels
+//        int red = 0;
+//        int green = 0;
+//        int blue = 0;
+//        int index = 0;
+//        for (int iy = 0; iy < result.Y(); iy++) {
+//            for (int ix = 0; ix < result.X(); ix++) {
+//                red = 0x0FF & pixels[index] >> 16;
+//                green = 0x0FF & pixels[index] >> 8;
+//                blue = 0x0FF & pixels[index];
+//                (result.plane(0)).set(ix, iy, (short) red);
+//                (result.plane(1)).set(ix, iy, (short) green);
+//                (result.plane(2)).set(ix, iy, (short) blue);
+//                index++;
+//            }
+//        }
+//
+//        return result;
+//    }
 
 
     protected static GrayImage GrayInitFromImage(java.awt.Image img, int x, int y, int w, int h) {
@@ -259,7 +291,7 @@ public class Morfologia {
         for (int i = sat.getStartX(); i < sat.getEndX()+1; i++) {
             for (int j = sat.getStartY(); j < sat.getEndY()+1; j++) {
                 int p = bf.getRGB(i, j);
-                if (analizapixel(p) > 120) {
+                if (analizapixel(p) > 150) {
                     img.setRGB(i, j, Color.BLACK.getRGB());
                 } // all pixels opaque white
                 else {
