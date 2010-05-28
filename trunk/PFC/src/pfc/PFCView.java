@@ -128,6 +128,7 @@ public class PFCView extends FrameView {
         jToolBar2 = new javax.swing.JToolBar();
         jButton4 = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
+        jButton5 = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
         menuBar = new javax.swing.JMenuBar();
@@ -200,6 +201,18 @@ public class PFCView extends FrameView {
         });
         jToolBar2.add(jButton1);
 
+        jButton5.setText(resourceMap.getString("jButton5.text")); // NOI18N
+        jButton5.setFocusable(false);
+        jButton5.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton5.setName("jButton5"); // NOI18N
+        jButton5.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButton5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                clausuraButtonActionPerformed(evt);
+            }
+        });
+        jToolBar2.add(jButton5);
+
         jButton2.setText(resourceMap.getString("jButton2.text")); // NOI18N
         jButton2.setFocusable(false);
         jButton2.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
@@ -233,7 +246,7 @@ public class PFCView extends FrameView {
                 .addComponent(jToolBar1, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jToolBar2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(70, Short.MAX_VALUE))
+                .addContainerGap(21, Short.MAX_VALUE))
         );
         mainPanelLayout.setVerticalGroup(
             mainPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -486,6 +499,20 @@ public class PFCView extends FrameView {
         System.out.println("Inversa finalizada...");
     }//GEN-LAST:event_inversaButtonActionPerformed
 
+    private void clausuraButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clausuraButtonActionPerformed
+        // TODO add your handling code here:
+        BufferedImage bf = miCanvas.getBufferedImage();
+
+        try {
+            java.awt.image.BufferedImage res = Morfologia.clausura(bf, toolSelectall);
+            miCanvas.setBufferedImage(res);
+        } catch (ImageNotSupportedException ex) {
+            Logger.getLogger(PFCView.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        System.out.println("Clausura finalizada...");
+    }//GEN-LAST:event_clausuraButtonActionPerformed
+
     private void canvasSetup() {
         miCanvas = new MiCanvas();
         miCanvas.setBackground(Color.gray);
@@ -629,6 +656,7 @@ public class PFCView extends FrameView {
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
+    private javax.swing.JButton jButton5;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem1;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem2;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem3;
