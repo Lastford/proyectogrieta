@@ -198,9 +198,13 @@ public class selectallTool implements ourTool {
             y = startY;
             if (endX < startX) {
                 x = endX;
+                endX = startX;
+                startX = x;
             }
             if (endY < startY) {
                 y = endY;
+                endY = startY;
+                startY = y;
             }
             width = Math.abs(startX - endX);
             height = Math.abs(startY - endY);

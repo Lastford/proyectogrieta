@@ -12,22 +12,13 @@ import java.awt.Cursor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jdesktop.application.Action;
-import org.jdesktop.application.ResourceMap;
 import org.jdesktop.application.SingleFrameApplication;
 import org.jdesktop.application.FrameView;
-import org.jdesktop.application.TaskMonitor;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import javax.swing.*;
 import jigl.image.ImageNotSupportedException;
-//import javax.swing.Timer;
-//import javax.swing.Icon;
-//import javax.swing.JDialog;
-//import javax.swing.JFileChooser;
-//import javax.swing.JFrame;
 
 /**
  * The application's main frame.
@@ -39,65 +30,7 @@ public class PFCView extends FrameView {
         
         initComponents();        
         canvasSetup();
-        toolInits();
-	borderInits();
-
-        //seleccionButton.setBorder(BorderFactory.createLoweredBevelBorder());
-
-        // status bar initialization - message timeout, idle icon and busy animation, etc
-        ResourceMap resourceMap = getResourceMap();
-        int messageTimeout = resourceMap.getInteger("StatusBar.messageTimeout");
-        messageTimer = new Timer(messageTimeout, new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                statusMessageLabel.setText("");
-            }
-        });
-        messageTimer.setRepeats(false);
-        int busyAnimationRate = resourceMap.getInteger("StatusBar.busyAnimationRate");
-        for (int i = 0; i < busyIcons.length; i++) {
-            busyIcons[i] = resourceMap.getIcon("StatusBar.busyIcons[" + i + "]");
-        }
-        busyIconTimer = new Timer(busyAnimationRate, new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                busyIconIndex = (busyIconIndex + 1) % busyIcons.length;
-                statusAnimationLabel.setIcon(busyIcons[busyIconIndex]);
-            }
-        });
-        idleIcon = resourceMap.getIcon("StatusBar.idleIcon");
-        statusAnimationLabel.setIcon(idleIcon);
-        progressBar.setVisible(false);
-
-        // connecting action tasks to status bar via TaskMonitor
-        TaskMonitor taskMonitor = new TaskMonitor(getApplication().getContext());
-        taskMonitor.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
-            public void propertyChange(java.beans.PropertyChangeEvent evt) {
-                String propertyName = evt.getPropertyName();
-                if ("started".equals(propertyName)) {
-                    if (!busyIconTimer.isRunning()) {
-                        statusAnimationLabel.setIcon(busyIcons[0]);
-                        busyIconIndex = 0;
-                        busyIconTimer.start();
-                    }
-                    progressBar.setVisible(true);
-                    progressBar.setIndeterminate(true);
-                } else if ("done".equals(propertyName)) {
-                    busyIconTimer.stop();
-                    statusAnimationLabel.setIcon(idleIcon);
-                    progressBar.setVisible(false);
-                    progressBar.setValue(0);
-                } else if ("message".equals(propertyName)) {
-                    String text = (String)(evt.getNewValue());
-                    statusMessageLabel.setText((text == null) ? "" : text);
-                    messageTimer.restart();
-                } else if ("progress".equals(propertyName)) {
-                    int value = (Integer)(evt.getNewValue());
-                    progressBar.setVisible(true);
-                    progressBar.setIndeterminate(false);
-                    progressBar.setValue(value);
-                }
-            }
-        });
-
+        toolInits();        
         
     }
 
@@ -126,11 +59,20 @@ public class PFCView extends FrameView {
         seleccionButton = new javax.swing.JButton();
         drawPanel = new javax.swing.JPanel();
         jToolBar2 = new javax.swing.JToolBar();
-        jButton4 = new javax.swing.JButton();
-        jButton1 = new javax.swing.JButton();
-        jButton5 = new javax.swing.JButton();
+        horizontalButton = new javax.swing.JButton();
+        verticalButton = new javax.swing.JButton();
+        diagonal1Button = new javax.swing.JButton();
+        jToolBar3 = new javax.swing.JToolBar();
+        jButton6 = new javax.swing.JButton();
+        jComboBox1 = new javax.swing.JComboBox();
+        jButton9 = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
+        jToolBar4 = new javax.swing.JToolBar();
+        jLabel1 = new javax.swing.JLabel();
+        jSlider1 = new javax.swing.JSlider();
+        jLabel2 = new javax.swing.JLabel();
+        jSlider2 = new javax.swing.JSlider();
         menuBar = new javax.swing.JMenuBar();
         javax.swing.JMenu fileMenu = new javax.swing.JMenu();
         newMenuItem = new javax.swing.JMenuItem();
@@ -158,10 +100,10 @@ public class PFCView extends FrameView {
         org.jdesktop.application.ResourceMap resourceMap = org.jdesktop.application.Application.getInstance(pfc.PFCApp.class).getContext().getResourceMap(PFCView.class);
         seleccionButton.setIcon(resourceMap.getIcon("seleccionButton.icon")); // NOI18N
         seleccionButton.setToolTipText(resourceMap.getString("seleccionButton.toolTipText")); // NOI18N
-        seleccionButton.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.LOWERED));
         seleccionButton.setFocusable(false);
         seleccionButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         seleccionButton.setName("seleccionButton"); // NOI18N
+        seleccionButton.setSelected(true);
         seleccionButton.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         seleccionButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -177,41 +119,73 @@ public class PFCView extends FrameView {
         jToolBar2.setRollover(true);
         jToolBar2.setName("jToolBar2"); // NOI18N
 
-        jButton4.setText(resourceMap.getString("jButton4.text")); // NOI18N
-        jButton4.setFocusable(false);
-        jButton4.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jButton4.setName("jButton4"); // NOI18N
-        jButton4.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jButton4.addActionListener(new java.awt.event.ActionListener() {
+        horizontalButton.setIcon(resourceMap.getIcon("horizontalButton.icon")); // NOI18N
+        horizontalButton.setFocusable(false);
+        horizontalButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        horizontalButton.setName("horizontalButton"); // NOI18N
+        horizontalButton.setSelected(true);
+        horizontalButton.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        horizontalButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                horizActionPerformed(evt);
+            }
+        });
+        jToolBar2.add(horizontalButton);
+
+        verticalButton.setIcon(resourceMap.getIcon("verticalButton.icon")); // NOI18N
+        verticalButton.setFocusable(false);
+        verticalButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        verticalButton.setName("verticalButton"); // NOI18N
+        verticalButton.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        verticalButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                vertActionPerformed(evt);
+            }
+        });
+        jToolBar2.add(verticalButton);
+
+        diagonal1Button.setIcon(resourceMap.getIcon("diagonal1Button.icon")); // NOI18N
+        diagonal1Button.setFocusable(false);
+        diagonal1Button.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        diagonal1Button.setName("diagonal1Button"); // NOI18N
+        diagonal1Button.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        diagonal1Button.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                diag1ActionPerformed(evt);
+            }
+        });
+        jToolBar2.add(diagonal1Button);
+
+        jToolBar3.setRollover(true);
+        jToolBar3.setName("jToolBar3"); // NOI18N
+
+        jButton6.setText(resourceMap.getString("jButton6.text")); // NOI18N
+        jButton6.setFocusable(false);
+        jButton6.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton6.setName("jButton6"); // NOI18N
+        jButton6.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButton6.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 inversaButtonActionPerformed(evt);
             }
         });
-        jToolBar2.add(jButton4);
+        jToolBar3.add(jButton6);
 
-        jButton1.setText(resourceMap.getString("procesarButton.text")); // NOI18N
-        jButton1.setFocusable(false);
-        jButton1.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jButton1.setName("procesarButton"); // NOI18N
-        jButton1.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Dilatación (Max)", "Erosión (Mín)", "Apertura", "Clausura", "Gradiente", "Top-Hat (Claro)", "Top-Hat (Oscuro)" }));
+        jComboBox1.setName("jComboBox1"); // NOI18N
+        jToolBar3.add(jComboBox1);
+
+        jButton9.setIcon(resourceMap.getIcon("jButton9.icon")); // NOI18N
+        jButton9.setFocusable(false);
+        jButton9.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton9.setName("jButton9"); // NOI18N
+        jButton9.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButton9.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                procesarButtonActionPerformed(evt);
+                runButtonActionPerformed(evt);
             }
         });
-        jToolBar2.add(jButton1);
-
-        jButton5.setText(resourceMap.getString("jButton5.text")); // NOI18N
-        jButton5.setFocusable(false);
-        jButton5.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jButton5.setName("jButton5"); // NOI18N
-        jButton5.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jButton5.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                clausuraButtonActionPerformed(evt);
-            }
-        });
-        jToolBar2.add(jButton5);
+        jToolBar3.add(jButton9);
 
         jButton2.setText(resourceMap.getString("jButton2.text")); // NOI18N
         jButton2.setFocusable(false);
@@ -223,7 +197,7 @@ public class PFCView extends FrameView {
                 binarizacionButtonActionPerformed(evt);
             }
         });
-        jToolBar2.add(jButton2);
+        jToolBar3.add(jButton2);
 
         jButton3.setText(resourceMap.getString("jButton3.text")); // NOI18N
         jButton3.setFocusable(false);
@@ -235,27 +209,63 @@ public class PFCView extends FrameView {
                 resultadoButtonActionPerformed(evt);
             }
         });
-        jToolBar2.add(jButton3);
+        jToolBar3.add(jButton3);
+
+        jToolBar4.setRollover(true);
+        jToolBar4.setName("jToolBar4"); // NOI18N
+
+        jLabel1.setText(resourceMap.getString("jLabel1.text")); // NOI18N
+        jLabel1.setName("jLabel1"); // NOI18N
+        jToolBar4.add(jLabel1);
+
+        jSlider1.setMajorTickSpacing(51);
+        jSlider1.setMaximum(255);
+        jSlider1.setMinorTickSpacing(17);
+        jSlider1.setPaintLabels(true);
+        jSlider1.setPaintTicks(true);
+        jSlider1.setValue(153);
+        jSlider1.setName("jSlider1"); // NOI18N
+        jToolBar4.add(jSlider1);
+
+        jLabel2.setText(resourceMap.getString("jLabel2.text")); // NOI18N
+        jLabel2.setName("jLabel2"); // NOI18N
+        jToolBar4.add(jLabel2);
+
+        jSlider2.setMajorTickSpacing(10);
+        jSlider2.setMaximum(52);
+        jSlider2.setMinimum(2);
+        jSlider2.setMinorTickSpacing(5);
+        jSlider2.setPaintLabels(true);
+        jSlider2.setPaintTicks(true);
+        jSlider2.setValue(10);
+        jSlider2.setName("jSlider2"); // NOI18N
+        jToolBar4.add(jSlider2);
 
         javax.swing.GroupLayout mainPanelLayout = new javax.swing.GroupLayout(mainPanel);
         mainPanel.setLayout(mainPanelLayout);
         mainPanelLayout.setHorizontalGroup(
             mainPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(drawPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 429, Short.MAX_VALUE)
             .addGroup(mainPanelLayout.createSequentialGroup()
-                .addComponent(jToolBar1, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jToolBar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jToolBar2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(21, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jToolBar3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jToolBar4, javax.swing.GroupLayout.PREFERRED_SIZE, 445, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(471, Short.MAX_VALUE))
+            .addComponent(drawPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 1398, Short.MAX_VALUE)
         );
         mainPanelLayout.setVerticalGroup(
             mainPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(mainPanelLayout.createSequentialGroup()
                 .addGroup(mainPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jToolBar1, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jToolBar2, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jToolBar1, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jToolBar2, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jToolBar3, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jToolBar4, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(drawPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 218, Short.MAX_VALUE))
+                .addComponent(drawPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 358, Short.MAX_VALUE))
         );
 
         menuBar.setName("menuBar"); // NOI18N
@@ -370,11 +380,11 @@ public class PFCView extends FrameView {
         statusPanel.setLayout(statusPanelLayout);
         statusPanelLayout.setHorizontalGroup(
             statusPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(statusPanelSeparator, javax.swing.GroupLayout.DEFAULT_SIZE, 429, Short.MAX_VALUE)
+            .addComponent(statusPanelSeparator, javax.swing.GroupLayout.DEFAULT_SIZE, 1398, Short.MAX_VALUE)
             .addGroup(statusPanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(statusMessageLabel)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 259, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 1228, Short.MAX_VALUE)
                 .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(statusAnimationLabel)
@@ -401,9 +411,19 @@ public class PFCView extends FrameView {
         // TODO add your handling code here:
         miCanvas.clear();
         miCanvas.zoom();
+
+        imagenOriginal = null;
+        imagenProcesada = null;
+
         if (curButton == seleccionButton) {
             toolSelectall.deSelect(miCanvas);
         }
+
+        arr = inicializarEltoEstructural(1);
+        curDirecc.setSelected(false);
+        curDirecc = horizontalButton;
+        curDirecc.setSelected(true);
+
     }//GEN-LAST:event_nuevoMenuItemActionPerformed
 
     private void seleccionButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_seleccionButtonActionPerformed
@@ -412,12 +432,11 @@ public class PFCView extends FrameView {
             toolSelectall.deSelect(miCanvas);
         }
       
-        curButton.setBorder(BorderFactory.createRaisedBevelBorder());
+        curButton.setSelected(false);
         curButton = seleccionButton;
-        curButton.setBorder(BorderFactory.createLoweredBevelBorder());
+        curButton.setSelected(true);
         currentTool = toolSelectall;
         
-        System.out.println("Salimos del evento del boton...");        
     }//GEN-LAST:event_seleccionButtonActionPerformed
 
     private void abrirMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_abrirMenuItemActionPerformed
@@ -429,7 +448,6 @@ public class PFCView extends FrameView {
     }//GEN-LAST:event_abrirMenuItemActionPerformed
 
     private void salirMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_salirMenuItemActionPerformed
-        // TODO add your handling code here:
         System.exit(0);
     }//GEN-LAST:event_salirMenuItemActionPerformed
 
@@ -455,63 +473,77 @@ public class PFCView extends FrameView {
         miCanvas.repaint();
     }//GEN-LAST:event_contraer100ActionPerformed
 
-    private void procesarButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_procesarButtonActionPerformed
-        BufferedImage bf = miCanvas.getBufferedImage();
-        
-        try {
-            java.awt.image.BufferedImage res = Morfologia.apertura(bf, toolSelectall);
-            miCanvas.setBufferedImage(res);            
-        } catch (ImageNotSupportedException ex) {
-            Logger.getLogger(PFCView.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        System.out.println("Apertura finalizada...");
-    }//GEN-LAST:event_procesarButtonActionPerformed
-
     private void binarizacionButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_binarizacionButtonActionPerformed
-        BufferedImage bf = miCanvas.getBufferedImage();
-
-        java.awt.image.BufferedImage res = Morfologia.pasarabyn(bf, toolSelectall);
-        miCanvas.setBufferedImage(res);
+        java.awt.image.BufferedImage imgBin = Morfologia.pasarabyn(imagenProcesada, toolSelectall, jSlider1.getValue());
+        miCanvas.setBufferedImage(imgBin);
 
         System.out.println("Binarización finalizada...");
     }//GEN-LAST:event_binarizacionButtonActionPerformed
 
     private void resultadoButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resultadoButtonActionPerformed
-        // TODO add your handling code here:
         BufferedImage imagenBin = miCanvas.getBufferedImage();
 
-        java.awt.image.BufferedImage res = Morfologia.verResultados(imagenOriginal, imagenBin, toolSelectall);
-        miCanvas.setBufferedImage(res);
+        java.awt.image.BufferedImage imgRes = Morfologia.verResultados(imagenOriginal, imagenBin, toolSelectall);
+        miCanvas.setBufferedImage(imgRes);
 
         System.out.println("Resultados finalizados...");
     }//GEN-LAST:event_resultadoButtonActionPerformed
 
+    private void horizActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_horizActionPerformed
+
+        if (curDirecc != horizontalButton) {
+            arr = inicializarEltoEstructural(1);            
+            curDirecc.setSelected(false);
+            curDirecc = horizontalButton;
+            curDirecc.setSelected(true);
+        }
+    }//GEN-LAST:event_horizActionPerformed
+
+    private void vertActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_vertActionPerformed
+
+        if (curDirecc != verticalButton) {            
+            arr = inicializarEltoEstructural(2);
+            curDirecc.setSelected(false);
+            curDirecc = verticalButton;
+            curDirecc.setSelected(true);
+        }
+        
+    }//GEN-LAST:event_vertActionPerformed
+
+    private void diag1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_diag1ActionPerformed
+
+        if (curDirecc != diagonal1Button) {
+            arr = inicializarEltoEstructural(3);
+            curDirecc.setSelected(false);
+            curDirecc = diagonal1Button;
+            curDirecc.setSelected(true);
+        }
+
+    }//GEN-LAST:event_diag1ActionPerformed
+
     private void inversaButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_inversaButtonActionPerformed
         // TODO add your handling code here:
-        BufferedImage bf = miCanvas.getBufferedImage();
+        BufferedImage imgOrig = miCanvas.getBufferedImage();
 
-        java.awt.image.BufferedImage res = Morfologia.inversa(bf,toolSelectall);
-
-        miCanvas.setBufferedImage(res);
-        miCanvas.zoom();
+        imagenProcesada = Morfologia.inversa(imgOrig);
+        miCanvas.setBufferedImage(imagenProcesada);
 
         System.out.println("Inversa finalizada...");
     }//GEN-LAST:event_inversaButtonActionPerformed
 
-    private void clausuraButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clausuraButtonActionPerformed
-        // TODO add your handling code here:
-        BufferedImage bf = miCanvas.getBufferedImage();
+    private void runButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runButtonActionPerformed
+//        BufferedImage imgOrig = miCanvas.getBufferedImage();
+//
+//        try {
+//            imagenProcesada = Morfologia.dilatacion(imgOrig, toolSelectall,arr);
+//            miCanvas.setBufferedImage(imagenProcesada);
+//        } catch (ImageNotSupportedException ex) {
+//            Logger.getLogger(PFCView.class.getName()).log(Level.SEVERE, null, ex);
+//        }
 
-        try {
-            java.awt.image.BufferedImage res = Morfologia.clausura(bf, toolSelectall);
-            miCanvas.setBufferedImage(res);
-        } catch (ImageNotSupportedException ex) {
-            Logger.getLogger(PFCView.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        System.out.println("Clausura finalizada...");
-    }//GEN-LAST:event_clausuraButtonActionPerformed
+        realizarTratamiento();
+        System.out.println("Dilatación finalizada...");
+    }//GEN-LAST:event_runButtonActionPerformed
 
     private void canvasSetup() {
         miCanvas = new MiCanvas();
@@ -555,10 +587,7 @@ public class PFCView extends FrameView {
                 int viewX = (int) miCanvas.pictureScrollPane.getViewport().getViewPosition().getX();
                 int viewY = (int) miCanvas.pictureScrollPane.getViewport().getViewPosition().getY();
                 int w = miCanvas.ancho;
-                int h = miCanvas.alto;
-                
-//                BufferedImage temp;
-                
+                int h = miCanvas.alto;                
 
                 int newX = (evt.getX() + viewX);
                 int newY = (evt.getY() + viewY);
@@ -569,10 +598,6 @@ public class PFCView extends FrameView {
                             newX, newY, evt.getClickCount(), false);
                     currentTool.mouseReleaseAction(newEvt, miCanvas);
                 }
-
-//                temp = toolSelectall.getCopyImage(miCanvas);
-//                miCanvas.setBufferedImage(temp);
-//                miCanvas.repaint();
             }
         });
 
@@ -598,6 +623,7 @@ public class PFCView extends FrameView {
 
     public void toolInits() {
         curButton = seleccionButton;
+        curDirecc = horizontalButton;        
 
         toolSelectall = new selectallTool();
         //toolZoom = new zoomTool();
@@ -605,12 +631,74 @@ public class PFCView extends FrameView {
         currentTool = toolSelectall;
         //curZoom = zoom1;
     }
+    
 
-    public void borderInits() {
+    private float[][] inicializarEltoEstructural(int num) {        
 
-        seleccionButton.setBorder(BorderFactory.createLoweredBevelBorder());
-      //zoom.setBorder(BorderFactory.createRaisedBevelBorder());
-  }
+        switch (num) {
+            case 1:
+                arr = new float[3][3];
+                for (int i = 0; i < 3; i++) {
+                    for (int j = 0; j < 3; j++) {
+//                        if (i == 1) {
+                            arr[i][j] = 0;
+//                        } else {
+//                            arr[i][j] = 0;
+//                        }
+                    }
+                }
+                break;
+            case 2:
+                arr = new float[3][3];
+                for (int i = 0; i < 3; i++) {
+                    for (int j = 0; j < 3; j++) {
+                        if (j == 1) {
+                            arr[i][j] = 1;
+                        } else {
+                            arr[i][j] = 0;
+                        }
+                    }
+                }
+                break;
+            case 3:
+                arr = new float[3][3];
+                for (int i = 0; i < 3; i++) {
+                    for (int j = 0; j < 3; j++) {
+                        if (i + j == 2) {
+                            arr[i][j] = 1;
+                        } else {
+                            arr[i][j] = 0;
+                        }
+                    }
+                }
+                break;
+            case 4:
+                arr = new float[3][3];
+                for (int i = 0; i < 3; i++) {
+                    for (int j = 0; j < 3; j++) {
+                        if (i == j) {
+                            arr[i][j] = 1;
+                        } else {
+                            arr[i][j] = 0;
+                        }
+                    }
+                }
+                break;
+            default:
+                arr = new float[3][3];
+                for (int i = 0; i < 3; i++) {
+                    for (int j = 0; j < 3; j++) {
+                        if (i == 2) {
+                            arr[i][j] = 1;
+                        } else {
+                            arr[i][j] = 0;
+                        }
+                    }
+                }
+                break;
+        }
+        return arr;
+    }
 
 
     private void abrirImagen() {
@@ -651,20 +739,28 @@ public class PFCView extends FrameView {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton diagonal1Button;
     private javax.swing.JPanel drawPanel;
-    private javax.swing.JButton jButton1;
+    private javax.swing.JButton horizontalButton;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
-    private javax.swing.JButton jButton4;
-    private javax.swing.JButton jButton5;
+    private javax.swing.JButton jButton6;
+    private javax.swing.JButton jButton9;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem1;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem2;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem3;
+    private javax.swing.JComboBox jComboBox1;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuItem jMenuItem1;
+    private javax.swing.JSlider jSlider1;
+    private javax.swing.JSlider jSlider2;
     private javax.swing.JToolBar jToolBar1;
     private javax.swing.JToolBar jToolBar2;
+    private javax.swing.JToolBar jToolBar3;
+    private javax.swing.JToolBar jToolBar4;
     private javax.swing.JPanel mainPanel;
     private javax.swing.JMenuBar menuBar;
     private javax.swing.JMenuItem newMenuItem;
@@ -674,22 +770,31 @@ public class PFCView extends FrameView {
     private javax.swing.JLabel statusAnimationLabel;
     private javax.swing.JLabel statusMessageLabel;
     private javax.swing.JPanel statusPanel;
+    private javax.swing.JButton verticalButton;
     // End of variables declaration//GEN-END:variables
 
     public MiCanvas miCanvas;
     public ourTool currentTool;
-    public JButton curButton = seleccionButton;    
+    public JButton curButton = seleccionButton;
+    public JButton curDirecc = horizontalButton;
     public boolean resize = false;
     public BufferedImage imagenOriginal = null;
+    public BufferedImage imagenProcesada = null;
+    public float[][] arr = inicializarEltoEstructural(1);
 
     public selectallTool toolSelectall;
     public zoomTool toolZoom;
 
-    private final Timer messageTimer;
-    private final Timer busyIconTimer;
-    private final Icon idleIcon;
-    private final Icon[] busyIcons = new Icon[15];
-    private int busyIconIndex = 0;
-
     private JDialog aboutBox;
+
+    private void realizarTratamiento() {
+//        BufferedImage imgOrig = miCanvas.getBufferedImage();
+        try {
+            imagenProcesada = Morfologia.comodin(imagenOriginal, toolSelectall, arr, jComboBox1.getSelectedIndex());
+            miCanvas.setBufferedImage(imagenProcesada);
+        } catch (ImageNotSupportedException ex) {
+            Logger.getLogger(PFCView.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
 }
