@@ -1,126 +1,267 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 
 package pfc;
 
-import jigl.image.ops.morph.GOpen;
+import jigl.image.ops.morph.*;
 import java.awt.image.*;
 import javax.swing.ImageIcon;
 import java.awt.*;
+import java.util.HashSet;
 import jigl.image.*;
-import jigl.image.ops.morph.GClose;
 
 
 /**
- *
- * @author Pablo
+ * @author Pablo Morillas Olmedo, Daniel Martín Núñez
  */
 
 public class Morfologia {
 
-    public static BufferedImage apertura(BufferedImage img, selectallTool sat) throws ImageNotSupportedException {
-        float arr[][] = new float[1][5];
+    /**
+     * Devuelve la inversa de la imagen que le metamos como
+     * parámetro.
+     */
+    public static BufferedImage inversa(BufferedImage imagenOrig) {
+        BufferedImage imgInv = new BufferedImage(imagenOrig.getWidth(),imagenOrig.getHeight(), BufferedImage.TYPE_INT_ARGB);
 
-        for (int i = 0; i < 1; i++) {
-            for (int j = 0; j < 5; j++){
-                arr[i][j] = 0;
+        for (int i = 0; i < imagenOrig.getWidth(); i++) {
+            for (int j = 0; j < imagenOrig.getHeight(); j++) {
+                int pixel = imagenOrig.getRGB(i, j);
+                int aux = Color.WHITE.getRGB() - pixel;
+                int ap = analizapixel(pixel);
+                if (ap >= 0 && ap < 256) {
+                    imgInv.setRGB(i, j, aux);
+                } else {
+                    imgInv.setRGB(i, j, imagenOrig.getRGB(i, j));
+                }
             }
         }
-
-        System.out.println("Punto inicio: ("+sat.getStartX()+","+sat.getStartY()+")");
-        System.out.println("Punto fin: ("+sat.getEndX()+","+sat.getEndY()+")");
-        
-        ROI roi = new ROI(sat.getStartX(), sat.getStartY(), sat.getEndX(), sat.getEndY());
-        
-        java.awt.Image image = (java.awt.Image) toImage(img);
-
-
-        GrayImage grayimg = GrayInitFromImage(image, 0, 0, img.getWidth()-1, img.getHeight()-1);
-
-        
-
-        ImageKernel ik = new ImageKernel(arr);
-        GOpen gop = new GOpen(ik, 0, 0);
-
-        jigl.image.Image im = gop.apply(grayimg, roi);
-
-        System.out.println("Apertura realizada");
-        MemoryImageSource imp = (MemoryImageSource) getJavaImage((GrayImage) (jigl.image.Image) im);
-        java.awt.Image imageres = Toolkit.getDefaultToolkit().createImage(imp);
-        BufferedImage res = toBufferedImage(imageres);
-        return res;
+        return imgInv;
     }
 
 
-    public static BufferedImage clausura(BufferedImage img, selectallTool sat) throws ImageNotSupportedException {
-        float arr[][] = new float[1][9];
+    public static BufferedImage comodin(BufferedImage imgOrig, selectallTool region, float[][] eltoEstruc, int indice) throws ImageNotSupportedException {
 
-        for (int i = 0; i < 1; i++) {
-            for (int j = 0; j < 9; j++){
-                arr[i][j] = 0;
-            }
+        ROI roi = null;
+
+        if (region.equals(null)) {
+            roi = new ROI(0,0,imgOrig.getWidth(),imgOrig.getHeight());
+        } else {
+            roi = new ROI(region.getStartX(), region.getStartY(), region.getEndX(), region.getEndY());
         }
 
-        System.out.println("Punto inicio: ("+sat.getStartX()+","+sat.getStartY()+")");
-        System.out.println("Punto fin: ("+sat.getEndX()+","+sat.getEndY()+")");
+        java.awt.Image imageOrig = (java.awt.Image) toImage(imgOrig);
 
-        ROI roi = new ROI(sat.getStartX(), sat.getStartY(), sat.getEndX(), sat.getEndY());
+        GrayImage imgGris = GrayInitFromImage(imageOrig, 0, 0, imgOrig.getWidth(), imgOrig.getHeight());
 
-        java.awt.Image image = (java.awt.Image) toImage(img);
+        ImageKernel ik = new ImageKernel(eltoEstruc);
 
-        GrayImage grayimg = GrayInitFromImage(image, 0, 0, img.getWidth()-1, img.getHeight()-1);
+        jigl.image.Image imgProc, imgProc1, imgProc2 = null;
+        BufferedImage imgRes, imgRes1, imgRes2 = null;
 
-        ImageKernel ik = new ImageKernel(arr);
-        GClose gcl = new GClose(ik, 0, 0);
+        GDilate gdil = null;
+        GErode gero = null;
+        GOpen gope = null;
+        GClose gclo = null;
 
-        jigl.image.Image im = gcl.apply(grayimg, roi);
+        switch (indice) {
+            case 0:
+                gdil = new GDilate(ik, 1, 1);
+                imgProc = gdil.apply(imgGris, roi);
+                imgRes = jiglToJava(imgProc);
+                break;
+            case 1:
+                gero = new GErode(ik, 1, 1);
+                imgProc = gero.apply(imgGris, roi);
+                imgRes = jiglToJava(imgProc);
+                break;
+            case 2:
+                gope = new GOpen(ik, 1, 1);
+                imgProc = gope.apply(imgGris, roi);
+                imgRes = jiglToJava(imgProc);
+                break;
+            case 3:
+                gclo = new GClose(ik, 1, 1);
+                imgProc = gclo.apply(imgGris, roi);
+                imgRes = jiglToJava(imgProc);
+                break;
+            case 4:
+                gero = new GErode(ik, 1, 1);
+                imgProc1 = gero.apply(imgGris, roi);
+                imgRes1 = jiglToJava(imgProc1);
+
+                gdil = new GDilate(ik, 1, 1);
+                imgProc2 = gdil.apply(imgGris, roi);
+                imgRes2 = jiglToJava(imgProc2);
+
+                imgRes = restaImagenes(imgRes2, imgRes1, region);
+                break;
+            case 5:
+                gope = new GOpen(ik, 1, 1);
+                imgProc = gope.apply(imgGris, roi);
+                imgRes = restaImagenes(jiglToJava(imgProc), jiglToJava(imgGris), region);
+                break;
+            case 6:
+                gclo = new GClose(ik, 1, 1);
+                imgProc = gclo.apply(imgGris, roi);
+                imgRes = restaImagenes (jiglToJava(imgProc),jiglToJava(imgGris), region);
+                break;
+            default:
+                gdil = new GDilate(ik, 1, 1);
+                imgProc = gdil.apply(imgGris, roi);
+                imgRes = jiglToJava(imgProc);
+                break;
+        }
+
+        System.out.println("Tratamiento realizado...");
+
+        return imgRes;
+    }
+
+
+    public static BufferedImage dilatacion(BufferedImage imgOrig, selectallTool region, float[][] eltoEstruc) throws ImageNotSupportedException {
+
+        ROI roi = new ROI(region.getStartX(), region.getStartY(), region.getEndX(), region.getEndY());
+
+        java.awt.Image imageOrig = (java.awt.Image) toImage(imgOrig);
+
+        GrayImage imgGris = GrayInitFromImage(imageOrig, 0, 0, imgOrig.getWidth(), imgOrig.getHeight());
+
+        ImageKernel ik = new ImageKernel(eltoEstruc);
+        GDilate gdil = new GDilate(ik, 1, 1);
+
+        jigl.image.Image imgProc = gdil.apply(imgGris, roi);
+        BufferedImage imgRes = jiglToJava(imgProc);
+
+        System.out.println("Dilatación realizada...");
+
+        return imgRes;
+    }
+
+    public static BufferedImage erosion(BufferedImage imgOrig, selectallTool region, float[][] eltoEstruc) throws ImageNotSupportedException {
+
+        ROI roi = new ROI(region.getStartX(), region.getStartY(), region.getEndX(), region.getEndY());
+
+        java.awt.Image imageOrig = (java.awt.Image) toImage(imgOrig);
+
+        GrayImage imgGris = GrayInitFromImage(imageOrig, 0, 0, imgOrig.getWidth(), imgOrig.getHeight());
+
+        ImageKernel ik = new ImageKernel(eltoEstruc);
+        GErode ger = new GErode(ik, 1, 1);
+
+        jigl.image.Image imgProc = ger.apply(imgGris, roi);
+        BufferedImage imgRes = jiglToJava(imgProc);
+
+        System.out.println("Erosión realizada...");
+
+        return imgRes;
+    }
+
+
+    public static BufferedImage apertura(BufferedImage imgOrig, selectallTool region, float[][] eltoEstruc) throws ImageNotSupportedException {
+        
+        ROI roi = new ROI(region.getStartX(), region.getStartY(), region.getEndX(), region.getEndY());
+                
+        java.awt.Image imageOrig = (java.awt.Image) toImage(imgOrig);
+
+        GrayImage imgGris = GrayInitFromImage(imageOrig, 0, 0, imgOrig.getWidth(), imgOrig.getHeight());
+        
+        ImageKernel ik = new ImageKernel(eltoEstruc);
+        GOpen gop = new GOpen(ik, 1, 1);
+
+        jigl.image.Image imgProc = gop.apply(imgGris, roi);
+        BufferedImage imgRes = jiglToJava(imgProc);
+
+        System.out.println("Apertura realizada...");
+        
+        return imgRes;
+    }
+
+
+    public static BufferedImage clausura(BufferedImage imgOrig, selectallTool region, float[][] eltoEstruc) throws ImageNotSupportedException {
+        
+        ROI roi = new ROI(region.getStartX(), region.getStartY(), region.getEndX(), region.getEndY());
+
+        java.awt.Image imageOrig = (java.awt.Image) toImage(imgOrig);
+
+        GrayImage imgGris = GrayInitFromImage(imageOrig, 0, 0, imgOrig.getWidth(), imgOrig.getHeight());
+
+        ImageKernel ik = new ImageKernel(eltoEstruc);
+        GClose gcl = new GClose(ik, 1, 1);
+
+        jigl.image.Image imgProc = gcl.apply(imgGris, roi);
+        BufferedImage imgRes = jiglToJava(imgProc);
 
         System.out.println("Clausura realizada...");
-        MemoryImageSource imp = (MemoryImageSource) getJavaImage((GrayImage) (jigl.image.Image) im);
-        java.awt.Image imageres = Toolkit.getDefaultToolkit().createImage(imp);
-        BufferedImage res = toBufferedImage(imageres);
-        return res;
+       
+        return imgRes;
     }
 
 
-//    protected static ColorImage ColorInitFromImage(java.awt.Image img, int x, int y, int w, int h) {
-//        ColorImage result = new ColorImage(w, h);
-//        int pixels[] = new int[w * h];
-//        PixelGrabber pg = new PixelGrabber(img, x, y, w, h, pixels, 0, w);
-//        try {
-//            pg.grabPixels();
-//        } catch (InterruptedException e) {
-//            System.err.println("interrupted waiting for pixels!");
-//            return result;
-//        }
-//        if ((pg.status() & ImageObserver.ABORT) != 0) {
-//            System.err.println("image fetch aborted or errored");
-//            return result;
-//        }
-//
-//        // convert from grabbed pixels
-//        int red = 0;
-//        int green = 0;
-//        int blue = 0;
-//        int index = 0;
-//        for (int iy = 0; iy < result.Y(); iy++) {
-//            for (int ix = 0; ix < result.X(); ix++) {
-//                red = 0x0FF & pixels[index] >> 16;
-//                green = 0x0FF & pixels[index] >> 8;
-//                blue = 0x0FF & pixels[index];
-//                (result.plane(0)).set(ix, iy, (short) red);
-//                (result.plane(1)).set(ix, iy, (short) green);
-//                (result.plane(2)).set(ix, iy, (short) blue);
-//                index++;
-//            }
-//        }
-//
-//        return result;
-//    }
+    public static BufferedImage topHatClara(BufferedImage imgOrig, selectallTool region, float[][] eltoEstruc) throws ImageNotSupportedException {
+
+        ROI roi = new ROI(region.getStartX(), region.getStartY(), region.getEndX(), region.getEndY());
+
+        java.awt.Image imageOrig = (java.awt.Image) toImage(imgOrig);
+
+        GrayImage imgGris = GrayInitFromImage(imageOrig, 0, 0, imgOrig.getWidth(), imgOrig.getHeight());
+
+        ImageKernel ik = new ImageKernel(eltoEstruc);
+        GOpen gop = new GOpen(ik, 1, 1);
+
+        jigl.image.Image imgProc = gop.apply(imgGris, roi);
+        BufferedImage imgRes = restaImagenes (jiglToJava(imgProc),jiglToJava(imgGris), region);
+
+        System.out.println("Top-Hat(Clara) realizada...");
+
+        return imgRes;
+    }
 
 
+    public static BufferedImage topHatOscura(BufferedImage imgOrig, selectallTool region, float[][] eltoEstruc) throws ImageNotSupportedException {
+
+        ROI roi = new ROI(region.getStartX(), region.getStartY(), region.getEndX(), region.getEndY());
+
+        java.awt.Image imageOrig = (java.awt.Image) toImage(imgOrig);
+
+        GrayImage imgGris = GrayInitFromImage(imageOrig, 0, 0, imgOrig.getWidth(), imgOrig.getHeight());
+
+        ImageKernel ik = new ImageKernel(eltoEstruc);
+        GClose gcl = new GClose(ik, 1, 1);
+
+        jigl.image.Image imgProc = gcl.apply(imgGris, roi);
+        BufferedImage imgRes = restaImagenes (jiglToJava(imgProc),jiglToJava(imgGris), region);
+
+        System.out.println("Top-Hat(Oscura) realizada...");
+
+        return imgRes;
+    }
+
+
+    public static BufferedImage gradienteMorfologico(BufferedImage imgOrig, selectallTool region, float[][] eltoEstruc) throws ImageNotSupportedException {
+
+        ROI roi = new ROI(region.getStartX(), region.getStartY(), region.getEndX(), region.getEndY());
+
+        java.awt.Image imageOrig = (java.awt.Image) toImage(imgOrig);
+        GrayImage imgGris = GrayInitFromImage(imageOrig, 0, 0, imgOrig.getWidth(), imgOrig.getHeight());
+        ImageKernel ik = new ImageKernel(eltoEstruc);
+
+        jigl.image.ops.morph.GErode ge = new GErode(ik, 1, 1);
+        jigl.image.Image imgProc1 = ge.apply(imgGris, roi);
+        BufferedImage imgRes1 = jiglToJava(imgProc1);
+
+        jigl.image.ops.morph.GDilate gd = new GDilate(ik, 1, 1);
+        jigl.image.Image imgProc2 = gd.apply(imgGris, roi);
+        BufferedImage imgRes2 = jiglToJava(imgProc2);
+
+        BufferedImage imgRes = restaImagenes(imgRes2, imgRes1, region);
+
+        return imgRes;
+    }
+
+
+    /**
+     * Convierte una imagen en color a una imagen en escala de grises, que
+     * necesitamos para hacer los diferentes tratamientos.
+     */
     protected static GrayImage GrayInitFromImage(java.awt.Image img, int x, int y, int w, int h) {
         GrayImage result = new GrayImage(w, h);
 
@@ -129,11 +270,11 @@ public class Morfologia {
         try {
             pg.grabPixels();
         } catch (InterruptedException e) {
-            System.err.println("interrupted waiting for pixels!");
+            System.err.println("Interrupted waiting for pixels!");
             return result;
         }
         if ((pg.status() & ImageObserver.ABORT) != 0) {
-            System.err.println("image fetch aborted or errored");
+            System.err.println("Image fetch aborted or errored");
             return result;
         }
 
@@ -159,51 +300,13 @@ public class Morfologia {
         }
 
         return result;
-
-	}
-
-    protected static ImageProducer getJavaImage(ColorImage img) {
-        // get range of this image
-        double min = (double) img.min();
-        double max = (double) img.max();
-
-        // keep byte images in original range
-        if (min >= 0 && max <= 255) {
-            min = 0.0;
-            max = 255.0;
-        }
-        double range = max - min;
-
-        // convert jigl image to java image
-        int pix[] = new int[img.X() * img.Y()];
-        int index = 0;
-        int red = 0;
-        int green = 0;
-        int blue = 0;
-        int[] color = new int[3];
-        for (int y = 0; y < img.Y(); y++) {
-            for (int x = 0; x < img.X(); x++) {
-                // map image values
-                color = img.get(x, y);
-                red = (int) ((255.0 / range) * ((double) color[0] - min));
-                green = (int) ((255.0 / range) * ((double) color[1] - min));
-                blue = (int) ((255.0 / range) * ((double) color[2] - min));
-
-                // take lower 8 bits
-                red = 0x00FF & red;
-                green = 0x00FF & green;
-                blue = 0x00FF & blue;
-
-                // put this pixel in the java image
-                pix[index] = (0xFF << 24) | (red << 16) | (green << 8) | blue;
-                index++;
-            }
-        }
-
-        // return java image
-        return new MemoryImageSource(img.X(), img.Y(), pix, 0, img.X());
     }
 
+
+    /**
+     * Devuelve una ImageProducer a partir de una GrayImage, usado para
+     * convertir una imagen de Jigl a Java.
+     */
     protected static ImageProducer getJavaImage(GrayImage img) {
         // get range of this image
         int min = img.min();
@@ -239,11 +342,19 @@ public class Morfologia {
     }
 
 
-    // This method returns an Image object from a buffered image
+    /**
+     * Devuelve una Image a partir de una BufferedImage, necesario para
+     * pasarla despues a GrayImage.
+     */
     public static java.awt.Image toImage(BufferedImage bufferedImage) {
         return  (java.awt.Image) Toolkit.getDefaultToolkit().createImage(bufferedImage.getSource());
     }
 
+
+    /**
+     * Devuelve una BufferedImage a partir de una Image, usado para
+     * convertir una imagen de Jigl a Java.
+     */
     public static BufferedImage toBufferedImage(java.awt.Image image) {
         if (image instanceof BufferedImage) {
             return (BufferedImage) image;
@@ -286,22 +397,30 @@ public class Morfologia {
     }
 
 
-    public static BufferedImage pasarabyn(BufferedImage bf, selectallTool sat) {
-        BufferedImage img = new BufferedImage(bf.getWidth(), bf.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        for (int i = sat.getStartX(); i < sat.getEndX()+1; i++) {
-            for (int j = sat.getStartY(); j < sat.getEndY()+1; j++) {
-                int p = bf.getRGB(i, j);
-                if (analizapixel(p) > 150) {
-                    img.setRGB(i, j, Color.BLACK.getRGB());
-                } // all pixels opaque white
-                else {
-                    img.setRGB(i, j, Color.WHITE.getRGB());
+    /**
+     * Devuelve una imagen binaria a partir de cualquier imagen, ya sea
+     * a color o en escala de grises. Usado para resaltar la grieta.
+     */
+    public static BufferedImage pasarabyn(BufferedImage imgProc, selectallTool region, int valorUmbral) {
+        BufferedImage imgRes = new BufferedImage(imgProc.getWidth(), imgProc.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        for (int i = region.getStartX(); i < region.getEndX()+1; i++) {
+            for (int j = region.getStartY(); j < region.getEndY()+1; j++) {
+                int p = imgProc.getRGB(i, j);
+                if (analizapixel(p) > valorUmbral) { //La grieta es blanca
+                    imgRes.setRGB(i, j, Color.BLACK.getRGB());
+                } else {
+                    imgRes.setRGB(i, j, Color.WHITE.getRGB());
                 }
             }
         }
-        return img;
+        return imgRes;
     }
 
+
+    /**
+     * Devuelve el entero correspondiente al valor RGB del píxel introducido
+     * como parámetro.
+     */
     public static int analizapixel(int pixel) {
         int red = (pixel >> 16) & 0xff;
         int green = (pixel >> 8) & 0xff;
@@ -310,54 +429,97 @@ public class Morfologia {
         return (red + green + blue) / 3;
     }
 
-    public static BufferedImage verResultados(BufferedImage imagenOrig, BufferedImage imagenBin, selectallTool sat) {
-        BufferedImage img = new BufferedImage(imagenOrig.getWidth(), imagenOrig.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = img.createGraphics();
-        g2d.drawImage(imagenOrig,null,0,0);
-        for (int i = sat.getStartX(); i < sat.getEndX(); ++i) {
-            for (int j = sat.getStartY(); j < sat.getEndY(); ++j) {
+
+    /**
+     * Devuelve una la imagen final con píxeles coloreados en rojo
+     * correspondientes a las grietas detectadas en la imagen.
+     */
+    public static BufferedImage verResultados(BufferedImage imagenOrig, BufferedImage imagenBin, selectallTool region) {
+        BufferedImage imgRes = new BufferedImage(imagenOrig.getWidth(), imagenOrig.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = imgRes.createGraphics();
+        g2d.drawImage(imagenOrig, null, 0, 0);
+
+        for (int i = region.getStartX()+2; i < region.getEndX()-1; i++) {
+            for (int j = region.getStartY()+2; j < region.getEndY()-1; j++) {
                 int p = imagenBin.getRGB(i, j);                
-                if (analizapixel(p) == 0) { //cuando los pixeles son negros
-                    img.setRGB(i, j, Color.RED.getRGB());
-                } 
-                else {                    
-                    img.setRGB(i, j, imagenOrig.getRGB(i, j));
+                if (analizapixel(p) == 0) { //los píxeles son negros
+                    imgRes.setRGB(i, j, Color.RED.getRGB());
+                } else {                    
+                    imgRes.setRGB(i, j, imagenOrig.getRGB(i, j));
                 }
             }
         }
-        return img;
-    }
-
-    protected static BufferedImage getCopy(BufferedImage in){
-       BufferedImage temp = new BufferedImage(in.getWidth(), in.getHeight(),BufferedImage.TYPE_INT_RGB);
-       Graphics2D g2d = temp.createGraphics();
-       g2d.drawImage(in,null,0,0);
-
-       return temp;
+        return imgRes;
     }
 
 
-public static BufferedImage inversa(BufferedImage imagenOrig, selectallTool sat) {
-        BufferedImage img = new BufferedImage(imagenOrig.getWidth(),imagenOrig.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        System.out.println("Altura: "+imagenOrig.getHeight());
-        System.out.println("Anchura: "+imagenOrig.getWidth());
-        Graphics2D g2d = img.createGraphics();
-        g2d.drawImage(imagenOrig,null,0,0);
-        for (int i = sat.getStartX(); i < sat.getEndX()+1; i++) {
-            for (int j = sat.getStartY(); j < sat.getEndY()+1; j++) {
-                int p = imagenOrig.getRGB(i, j);                
-                int aux = Color.BLACK.getRGB() - p;                
-                int ap = analizapixel(p);
-                if (ap >= 0 && ap < 256) {                     
-                    img.setRGB(i, j, aux);
-                }
-                else {
-                    img.setRGB(i, j, imagenOrig.getRGB(i, j));
+    
+    
+    public static BufferedImage restaImagenes(BufferedImage b1, BufferedImage b2, selectallTool sat) {
+        BufferedImage res = new BufferedImage(b2.getWidth(), b2.getHeight(), BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = res.createGraphics();
+        g2d.drawImage(b2, null, 0, 0);
+        int redR;
+        int greenR;
+        int blueR;        
+        
+        if ((b1.getWidth() == b2.getWidth()) && (b1.getHeight() == b2.getHeight())) {
+            for (int i = sat.getStartX(); i < sat.getEndX()+1; i++) {
+                for (int j = sat.getStartY(); j < sat.getEndY()+1; j++) {
+
+                    int pixel1 = b1.getRGB(i, j);
+                    int pixel2 = b2.getRGB(i, j);
+
+                    int red1 = (pixel1 >> 16) & 0xff;
+                    int green1 = (pixel1 >> 8) & 0xff;
+                    int blue1 = (pixel1) & 0xff;
+
+                    int red2 = (pixel2 >> 16) & 0xff;
+                    int green2 = (pixel2 >> 8) & 0xff;
+                    int blue2 = (pixel2) & 0xff;
+
+                    redR = red1 - red2;
+                    greenR = green1 - green2;
+                    blueR = blue1 - blue2;
+
+                    redR = (redR + 255)/2;
+                    greenR = (greenR + 255)/2;
+                    blueR = (blueR + 255)/2;
+
+                    Color color = new Color(redR, greenR, blueR);
+                    res.setRGB(i, j, color.getRGB());
                 }
             }
+        } else {
+            System.out.println("Imagenes de dimensiones diferentes");
         }
-        return img;
+
+        return res;
     }
+
+
+    public static int escala(int gris, int n) {
+        int c = 256 / n;
+        int res = 0;
+
+        for (int i = 0; i < n; i++) {
+            if ((gris > i * c) && (gris <= (i + 1) * c)) {
+                res = (i * c) + ((i + 1) * c);
+            }
+        }
+        return (res / 2);
+    }
+
+
+    public static BufferedImage jiglToJava(jigl.image.Image img) {
+
+        MemoryImageSource imp = (MemoryImageSource) getJavaImage((GrayImage) (jigl.image.Image) img);
+        java.awt.Image imageres = Toolkit.getDefaultToolkit().createImage(imp);
+        BufferedImage res = toBufferedImage(imageres);
+        return res;
+
+    }
+
 
 
 }
